@@ -4,12 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Control Jardín ESP32</title>
-<meta name="theme-color" content="#1769aa">
-<meta name="description" content="Control local del sistema de riego Control Jardín.">
-
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" href="/icon-192.png">
-<title>Control Jardín</title>
   <style>
     body {
       margin: 0; padding: 20px;
@@ -109,14 +103,6 @@
     // Actualizar estado cada 3 segundos automáticamente
     setInterval(actualizarEstado, 3000);
     window.onload = actualizarEstado;
-//Los navegadores exigen contexto seguro HTTPS
-if ('serviceWorker' in navigator &&
-    (location.protocol === 'https:' ||
-     location.hostname === 'localhost')) {
-
-  navigator.serviceWorker.register('/service-worker.js')
-    .catch(err => console.log('SW:', err));
-}
   </script>
 
 </body>
