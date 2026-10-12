@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control Jardín ESP32</title>
+<meta name="theme-color" content="#1769aa">
+<meta name="description" content="Control local del sistema de riego Control Jardín.">
+
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/icon-192.png">
+<title>Control Jardín</title>
+  <style>
+    body {
+      margin: 0; padding: 20px;
+      font-family: Arial, sans-serif;
+      background: #f0f0f0; color: #222;
+      text-align: center;
+    }
+    .card {
+      background: white; padding: 20px;
+      margin: 15px auto; border-radius: 10px;
+      max-width: 400px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    button {
+      width: 100%; padding: 14px; font-size: 16px;
+      margin-top: 10px; border-radius: 5px;
+      border: none; cursor: pointer; color: white;
+    }
+    .btn-on { background: #4CAF50; }
+    .btn-off { background: #f44336; }
+    .btn-timer { background: #ff9800; }
+    input[type="number"] {
+      width: 100%; padding: 12px; font-size: 16px;
+      box-sizing: border-box; text-align: center; border: 1px solid #ccc; border-radius: 5px;
+    }
+    #status { font-weight: bold; font-size: 18px; color: #007BFF; }
+  </style>
+</head>
+<body>
+
+  <div class="card">
+    <h2>Control Jardín ESP32</h2>
+    <p id="status">Estado: Sincronizando...</p>
+  </div>
+
+  <div class="card">
+    <h3>Acción Manual</h3>
+    <button class="btn-on" onclick="enviarComandoLocal('on')">ENCENDER TODO</button>
+    <button class="btn-off" onclick="enviarComandoLocal('off')">APAGAR TODO</button>
+  </div>
+
+  <div class="card">
+    <h3>Temporizador</h3>
+    <input type="number" id="minutos" value="30" min="1" max="480">
+    <button class="btn-timer" onclick="enviarTemporizador()">INICIAR TEMPORIZADOR</button>
+  </div>
+
+  <script>
+    function actualizarEstado() {
+      fetch('/status', { cache: 'no-store' })
+        .then(response => response.json())
+        .then(data => {
+          const elementoEstado = document.getElementById('status');
+          let texto = "Estado actual: " + data.estado;
+
+          if (data.estado === "TIMER") {
+            texto += " (" + data.minutosRestantes + " min restantes)";
+          }
+
+          elementoEstado.innerText = texto;
+
+          if (data.estado === "ON") {
+            elementoEstado.style.color = "green";
+          } else if (data.estado === "OFF") {
+            elementoEstado.style.color = "red";
+          } else {
+            elementoEstado.style.color = "orange";
+          }
+        })
+        .catch(err => {
+          const elementoEstado = document.getElementById('status');
+          elementoEstado.innerText = "Desconectado del ESP32";
+          elementoEstado.style.color = "red";
+        });
+    }
+
+    function enviarComandoLocal(accion) {
+      fetch('/' + accion, { cache: 'no-store' })
+        .then(res => res.text())
+        .then(data => {
+          console.log("Respuesta:", data);
+          actualizarEstado();
+        })
+        .catch(err => alert("Error de comunicación: " + err));
+    }
+
+    function enviarTemporizador() {
+      let min = document.getElementById('minutos').value;
+      fetch('/timer?min=' + min, { cache: 'no-store' })
+        .then(res => res.text())
+        .then(data => {
+          console.log("Respuesta:", data);
+          actualizarEstado();
+        })
+        .catch(err => alert("Error de comunicación: " + err));
+    }
+
+    // Actualizar estado cada 3 segundos automáticamente
+    setInterval(actualizarEstado, 3000);
+    window.onload = actualizarEstado;
+//Los navegadores exigen contexto seguro HTTPS
+if ('serviceWorker' in navigator &&
+    (location.protocol === 'https:' ||
+     location.hostname === 'localhost')) {
+
+  navigator.serviceWorker.register('/service-worker.js')
+    .catch(err => console.log('SW:', err));
+}
+  </script>
+
+</body>
+</html>
